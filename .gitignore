@@ -112,3 +112,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+logs/eval/
+logs/pred/
+model/eval/
+model/pred/
