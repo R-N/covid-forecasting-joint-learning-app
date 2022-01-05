@@ -1,0 +1,9 @@
+{
+    "hidden_size_future": 0,
+    "hidden_size_past": 35,
+    "input_size_future": 23,
+    "input_size_past": 22,
+    "output_size": 3,
+    "private_state_size": 19,
+    "shared_state_size": 54
+}

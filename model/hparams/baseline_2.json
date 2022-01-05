@@ -1,0 +1,19 @@
+{
+    "additional_past_length": 2,
+    "batch_size": 0,
+    "combine_head_depth": 6,
+    "combine_head_w0_mean": 0.8142444673469048,
+    "combine_head_w0_std": 0.2721895756891801,
+    "fc_activation": "SELU",
+    "future_exo_cols": 0,
+    "lr": 0.006926129112589177,
+    "onecycle": 0,
+    "past_cols": 0,
+    "precombine_head_depth": 1,
+    "private_state_size": 48,
+    "residual_activation": "LeakyReLU",
+    "shared_state_size": 3,
+    "source_weight": 0.9602680180630343,
+    "use_last_past": 1,
+    "weight_decay": 0.11287027157112466
+}

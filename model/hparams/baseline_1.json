@@ -1,0 +1,14 @@
+{
+    "additional_past_length": 4,
+    "batch_size": 0,
+    "combine_head_depth": 2,
+    "fc_activation": "Sigmoid",
+    "future_exo_cols": 0,
+    "lr": 0.0018798413078258333,
+    "onecycle": 0,
+    "past_cols": 0,
+    "private_state_size": 49,
+    "residual_activation": "SELU",
+    "use_last_past": 0,
+    "weight_decay": 0.2155298674183308
+}

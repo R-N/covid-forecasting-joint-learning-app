@@ -1,0 +1,25 @@
+{
+	"folders":
+	[
+		{
+			/*"binary_file_patterns":
+			[
+			],*/
+			/*"file_exclude_patterns":
+			[
+			],*/
+			/*"folder_exclude_patterns":
+			[
+			],*/
+			"name": "covid-forecasting-joint-learning",
+			"path": ".",
+		}
+	],
+    "settings": {
+        // ...
+        "python_interpreter_path": "C:/ProgramData/Anaconda3/envs/covid_forecasting/python.exe",
+        "python_package_paths": [
+            "C:/ProgramData/Anaconda3/envs/covid_forecasting/Lib/site-packages/"
+        ]
+    }
+}
