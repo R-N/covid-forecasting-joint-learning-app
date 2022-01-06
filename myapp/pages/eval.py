@@ -114,7 +114,7 @@ def eval(
     log_dir_copy,
     model_dir_copy,
     trial_id=-1,
-    min_epoch=100,
+    min_epoch=0,
     max_epoch=None,
     val=0,
     early_stopping_kwargs={}
@@ -194,7 +194,9 @@ def app(
     show_loss=True,
     show_epoch=True,
     show_tb=False,
-    hparam_dir="model/hparams/"
+    hparam_dir="model/hparams/",
+    min_epoch=0,
+    max_epoch=1
 ):
     st.markdown(title)
 
@@ -205,7 +207,7 @@ def app(
 
     trial_id_col, min_epoch_col = st.sidebar.columns(2)
     trial_id = trial_id_col.number_input("Trial ID", value=trial_id, step=1)
-    min_epoch = min_epoch_col.number_input("Minimum Epoch", value=100, min_value=0, step=1)
+    min_epoch = min_epoch_col.number_input("Minimum Epoch", value=min_epoch, min_value=0, step=1)
 
 
     with open(hparam_path, 'r', encoding='utf-8') as f:
@@ -301,7 +303,7 @@ def app(
                 model_dir_copy=model_dir,
                 trial_id=trial_id,
                 min_epoch=min_epoch,
-                max_epoch=None,
+                max_epoch=max_epoch,
                 val=val,
                 early_stopping_kwargs=early_stopping_kwargs
             )
