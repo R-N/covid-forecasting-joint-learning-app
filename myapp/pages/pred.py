@@ -121,6 +121,23 @@ def make_figs(df, model_dir_3):
 
     return fig_dict_1
 
+@st.cache(
+    hash_funcs={
+        KabkoData: hash,
+        Cluster: hash,
+        Group: hash
+    },
+    allow_output_mutation=True
+)
+def preprocess_pred(targets, pred_date, past_size, past_cols, future_exo_cols):
+    Pipeline.preprocessing_7(
+        targets,
+        end_date=pred_date,
+        past_size=past_size,
+        past_cols=past_cols,
+        future_exo_cols=future_exo_cols
+    )
+
 def app():
     groups, hparams, model_dir, trial_id, target_names = _app()
     groups = [g.copy() for g in groups]
@@ -156,7 +173,8 @@ def app():
         past_cols = DEFAULT_PAST_COLS[past_cols] if isinstance(past_cols, int) else past_cols
         future_exo_cols = hparams["future_exo_cols"]
         future_exo_cols = DEFAULT_FUTURE_EXO_COLS[future_exo_cols] if isinstance(future_exo_cols, int) else future_exo_cols
-        Pipeline.preprocessing_7(
+
+        preprocess_pred(
             group.targets,
             end_date=pred_date,
             past_size=30 + hparams["additional_past_length"],
