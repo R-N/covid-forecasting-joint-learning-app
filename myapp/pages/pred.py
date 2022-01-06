@@ -133,14 +133,15 @@ def app():
     pred_expander = st.expander(label='Forecast', expanded=True)
     with pred_expander:
         st.markdown("## Forecast")
-        target_col, fig_col, pred_col = st.columns(3)
+        target_col, pred_col = st.columns(2)
         target_name = target_col.selectbox(
             'Kabupaten/Kota',
             target_names
         )
-        fig_name = fig_col.selectbox(
+        fig_name = st.multiselect(
             'Label',
-            fig_names
+            fig_names,
+            DataCol.IRD
         )
 
         # pred_date = "2021-12-31"
@@ -178,6 +179,7 @@ def app():
         preds = [pred_dict[t] for t in target_names]
         save_combined_pred(preds, model_dir_2)
 
-        fig = fig_dict[target_name][fig_name]
-        st.pyplot(fig)
+        for f in fig_name:
+            fig = fig_dict[target_name][f]
+            st.pyplot(fig)
 
