@@ -27,6 +27,8 @@ from covid_forecasting_joint_learning.pipeline.clustering import Cluster
     allow_output_mutation=True
 )
 def preprocess(kabkos, labeled_dates, last):
+    kabkos = Pipeline.preprocessing_1(kabkos)
+
     for k in kabkos:
         k.data = k.add_dates(k.data, dates=labeled_dates)
 
@@ -109,7 +111,6 @@ def sample_rebuild(kabko):
 
 def app():
     st.markdown("# Data Preprocessing & Clustering")
-
 
     loader = load_data()
 
