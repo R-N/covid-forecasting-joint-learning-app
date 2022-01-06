@@ -292,11 +292,13 @@ def app(
     hparams["future_exo_cols"] = future_exo_cols
 
     model_dir_2 = f"{model_dir}/{trial_id}/"
-    json.dump(hparams, f"{model_dir_2}hparams.json")
+    with open(f"{model_dir_2}hparams.json", 'w', encoding='utf-8') as f:
+        json.dump(hparams, f)
 
     for group in groups:
         for cluster in group.clusters:
-            json.dump(hparams, f"{model_dir_2}{group.id}/{cluster.id}/hparams.json")
+            with open(f"{model_dir_2}{group.id}/{cluster.id}/hparams.json", 'w', encoding='utf-8') as f:
+                json.dump(hparams, f)
 
     eval_expander = st.expander(label='Eval', expanded=False)
     with eval_expander:
