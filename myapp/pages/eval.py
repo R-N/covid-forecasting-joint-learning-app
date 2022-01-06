@@ -291,6 +291,13 @@ def app(
     hparams["past_cols"] = past_cols
     hparams["future_exo_cols"] = future_exo_cols
 
+    model_dir_2 = f"{model_dir}/{trial_id}/"
+    json.dump(hparams, f"{model_dir_2}hparams.json")
+
+    for group in groups:
+        for cluster in group.clusters:
+            json.dump(hparams, f"{model_dir_2}{group.id}/{cluster.id}/hparams.json")
+
     eval_expander = st.expander(label='Eval', expanded=False)
     with eval_expander:
         st.markdown("## Eval exec")
@@ -312,7 +319,6 @@ def app(
 
     result_1 = clean_result(result)
 
-    model_dir_2 = f"{model_dir}/{trial_id}/"
     Path(model_dir_2).mkdir(parents=True, exist_ok=True)
 
     cols = {group.id: [t.name for t in group.targets] for group in groups}
