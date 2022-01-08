@@ -16,9 +16,11 @@ from covid_forecasting_joint_learning.pipeline.clustering import Cluster
 
 @st.cache(
     hash_funcs={
-        KabkoData: hash,
-        Cluster: hash,
-        Group: hash
+        KabkoData: id,
+        Cluster: id,
+        Group: id,
+        type(KabkoData): id,
+        type(load_data): id
     },
     allow_output_mutation=True
 )

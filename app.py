@@ -2,7 +2,7 @@
 import streamlit as st
 
 from myapp.global_data import init
-from myapp.pages import data_exploration_series, data_exploration_all, data_getter, data_preprocessing, eval, pred, home # import your pages here
+from myapp.pages import data_exploration_series, data_exploration_all, data_getter, data_preprocessing, eval, pred, home, pred_load  # import your pages here
 
 st.set_page_config(layout="wide")
 
@@ -38,6 +38,7 @@ add_page("Exploration All", data_exploration_all.app)
 add_page("Preprocessing & Clustering", data_preprocessing.app)
 add_page("Evaluation", eval.app)
 add_page("Forecast", pred.app)
+add_page("Forecast (Load)", pred_load.app)
 
 # The main app
 run()

@@ -13,11 +13,13 @@ from covid_forecasting_joint_learning import main as Main
 from covid_forecasting_joint_learning.model import general as general_model
 from covid_forecasting_joint_learning.model.baseline import lstm, no_representation, source_longest, source_all, fully_shared, fully_private
 from covid_forecasting_joint_learning.data.kabko import KabkoData
+from covid_forecasting_joint_learning.data.center import DataCenter
 from covid_forecasting_joint_learning.pipeline.preprocessing import Group
 from covid_forecasting_joint_learning.pipeline.clustering import Cluster
 from .data_exploration_all import get_dates, get_cols
 from covid_forecasting_joint_learning.model.general import DEFAULT_FUTURE_EXO_COLS, DEFAULT_PAST_COLS
 from streamlit_tensorboard import st_tensorboard
+import torch
 
 
 model_names = [
@@ -56,41 +58,82 @@ model_func_dict = dict(zip(model_codes, model_funcs))
 
 @st.cache(
     hash_funcs={
-        KabkoData: hash,
-        Cluster: hash,
-        Group: hash
+        DataCenter: id,
+        KabkoData: id,
+        Cluster: id,
+        Group: id,
+        type(KabkoData): id,
+        type(load_data): id
     },
     allow_output_mutation=True
 )
 def main_1(
+    loader,
     limit_length=[],
     limit_date=["2020-03-20"],
     limit_data=True,
     n_clusters=None,
+    clustering_callback=None,
+    kabkos=None,
     **kwargs
 ):
     groups = Main.main_1(
-        load_data(),
+        loader,
         limit_length=limit_length,
         limit_date=limit_date,
         limit_data=limit_data,
-        n_clusters=n_clusters
+        n_clusters=n_clusters,
+        kabkos=kabkos,
+        clustering_callback=clustering_callback,
+        **kwargs
     )
     return groups
 
-def add_targets(groups, targets):
-    target_expander = st.expander(label='Missing Targets', expanded=False)
+"""
+@st.cache(
+    hash_funcs={
+        KabkoData: id,
+        Cluster: id,
+        Group: id,
+        type(KabkoData): id,
+        type(load_data): id
+    },
+    allow_output_mutation=True
+)
+"""
+def set_targets(groups, targets):
+    # groups = [g.copy() for g in groups]
+    for group in groups:
+        for cluster in group.clusters:
+            cluster.set_targets(targets)
+
+    return groups
+
+
+@st.cache(
+    hash_funcs={
+        KabkoData: id,
+        Cluster: id,
+        Group: id,
+        torch.nn.Module: id,
+        type(torch.nn.Module): id,
+        type(set_targets): id
+    },
+    allow_output_mutation=True
+)
+def create_set_targets(targets):
+    def __set_targets(groups):
+        return set_targets(groups, targets)
+    return __set_targets
+
+def show_clustering(groups):
+    target_expander = st.expander(label='Clustering', expanded=False)
     with target_expander:
-        st.markdown("## Missing Targets")
+        st.markdown("## Clustering")
         for group in groups:
             st.markdown(f"### Group {group.id}")
             for cluster in group.clusters:
                 st.markdown(f"#### Cluster {cluster.id}")
-                missing_targets = [k for k in cluster.sources if k.name in targets]
-                if len(missing_targets) > 0:
-                    st.write("Adding missing_targets: ", [k.name for k in missing_targets])
-                for k in missing_targets:
-                    cluster.append_target(k)
                 st.write("Targets: ", [f"{t.name} ({len(t.data)}, {t.data.first_valid_index()})"for t in cluster.targets])
                 st.write("Sources: ", [s.name for s in cluster.sources])
 
@@ -101,9 +144,12 @@ def add_targets(groups, targets):
 
 @st.cache(
     hash_funcs={
-        KabkoData: hash,
-        Cluster: hash,
-        Group: hash
+        KabkoData: id,
+        Cluster: id,
+        Group: id,
+        torch.nn.Module: id,
+        type(torch.nn.Module): id,
+        type(load_data): id
     },
     allow_output_mutation=True
 )
@@ -120,7 +166,7 @@ def eval(
     early_stopping_kwargs={}
 ):
     model_func = model_func_dict[model_code]
-    return model_func.eval(
+    result, epoch_log = model_func.eval(
         groups,
         hparams,
         log_dir_copy=log_dir_copy,
@@ -132,6 +178,9 @@ def eval(
         val=val,
         early_stopping_kwargs=early_stopping_kwargs
     )
+
+    result_1 = clean_result(result)
+    return result_1, epoch_log
 
 def clean_result(result):
     result_1 = {
@@ -182,6 +231,45 @@ def recap_epoch(epoch_log, targets, clusters, group=0):
     df = pd.DataFrame(pre_df)
     return df
 
+def write_json(obj, file_name, groups, model_dir_2):
+    with open(f"{model_dir_2}{file_name}", 'w', encoding='utf-8') as f:
+        json.dump(obj, f)
+
+    for group in groups:
+        for cluster in group.clusters:
+            model_dir_3 = f"{model_dir_2}/{group.id}/{cluster.id}/"
+            Path(model_dir_3).mkdir(parents=True, exist_ok=True)
+            with open(f"{model_dir_3}{file_name}", 'w', encoding='utf-8') as f:
+                json.dump(obj, f)
+
+def show_group_excel(title, group, model_dir_2, file_name, sheet_name, expanded=True):
+    loss_expander = st.expander(label=title, expanded=expanded)
+    with loss_expander:
+        title_col, group_col = st.columns(2)
+        title_col.markdown(f"## {title}")
+
+        if isinstance(group, list):
+            group = group_col.selectbox(
+                "Group",
+                group,
+                key=title.lower().replace(" ", "-") + "-group-select"
+            )
+
+        title_col, download_col = st.columns(2)
+        title_col.markdown(f"### Group {group}")
+
+        file_path = f"{model_dir_2}/{group}/{file_name}"
+        if not Path(file_path).is_file():
+            st.write("Excel file missing: ", file_path)
+            return
+
+        df = pd.read_excel(file_path, sheet_name=sheet_name)
+        download_col.download_button(
+            "Download",
+            get_excel(df, sheet_name=sheet_name),
+            file_name
+        )
+        st.write(df)
 
 def app(
     title="# Evaluation",
@@ -196,7 +284,7 @@ def app(
     show_tb=False,
     hparam_dir="model/hparams/",
     min_epoch=0,
-    max_epoch=1
+    max_epoch=None
 ):
     st.markdown(title)
 
@@ -213,25 +301,8 @@ def app(
     with open(hparam_path, 'r', encoding='utf-8') as f:
         hparams = json.load(f)
 
-    preprocessing_expander = st.expander(label='Preprocessing', expanded=False)
-    with preprocessing_expander:
-        st.markdown("## Preprocessing")
-        with io.StringIO() as buf, redirect_stdout(buf):
-            groups = main_1(
-                # labeled_dates=labeled_dates,
-                # cols=x_cols,
-                limit_length=[],
-                limit_date=[last],
-                limit_data=limit_data,
-                n_clusters=None
-            )
-            print_out = buf.getvalue()
-        st.write(print_out)
-
-    groups = [g.copy() for g in groups]
-    group = groups[0]
-    kabkos = group.members
-    kabko_names = [k.name for k in kabkos]
+    loader = load_data()
+    kabko_names = loader.kabko.tolist()
 
     kabko_ms_expander = st.sidebar.expander(label='Kabupaten/Kota', expanded=False)
     # kabko_col, series_col = st.sidebar.columns(2)
@@ -242,9 +313,9 @@ def app(
             kabko_names
         )
 
-    kabko_dict = {k.name: k for k in kabkos}
-    kabkos = [kabko_dict[k] for k in kabko_names]
-    kabko_names = [k.name for k in kabkos]
+    if len(kabko_names) == 0:
+        st.error(f"Please select at least one kabupaten/kota")
+        return
 
     target_names = [
         'KAB. BOJONEGORO',
@@ -255,15 +326,38 @@ def app(
     ]
     target_names = [t for t in target_names if t in kabko_names]
 
-    target_expander = st.sidebar.expander(label='Target', expanded=False)
+    target_expander = st.sidebar.expander(label='Targets', expanded=False)
     with target_expander:
         target_names = st.multiselect(
-            'Target',
+            'Targets',
             kabko_names,
             target_names
         )
 
-    groups = add_targets(groups, target_names)
+    if len(target_names) == 0:
+        st.error(f"Please select at least one target")
+        return
+
+    preprocessing_expander = st.expander(label='Preprocessing', expanded=False)
+    with preprocessing_expander:
+        st.markdown("## Preprocessing")
+        with io.StringIO() as buf, redirect_stdout(buf):
+            groups = main_1(
+                loader,
+                limit_length=[],
+                limit_date=[last],
+                limit_data=limit_data,
+                n_clusters=None,
+                kabkos=kabko_names,
+                clustering_callback=create_set_targets(target_names)
+            )
+            print_out = buf.getvalue()
+        st.write(print_out)
+
+    show_clustering(groups)
+
+    group = groups[0]
+    kabkos = group.members
 
     past_cols = hparams["past_cols"]
     past_cols = DEFAULT_PAST_COLS[past_cols] if isinstance(past_cols, int) else past_cols
@@ -292,19 +386,21 @@ def app(
     hparams["future_exo_cols"] = future_exo_cols
 
     model_dir_2 = f"{model_dir}/{trial_id}/"
-    with open(f"{model_dir_2}hparams.json", 'w', encoding='utf-8') as f:
-        json.dump(hparams, f)
+    Path(model_dir_2).mkdir(parents=True, exist_ok=True)
 
-    for group in groups:
-        for cluster in group.clusters:
-            with open(f"{model_dir_2}{group.id}/{cluster.id}/hparams.json", 'w', encoding='utf-8') as f:
-                json.dump(hparams, f)
+    write_json(hparams, "hparams.json", groups, model_dir_2)
+    write_json({
+        "model_code": model_code,
+        "last_date": last.strftime("%Y-%m-%d"),
+        "kabko_names": kabko_names,
+        "target_names": target_names
+    }, "model.json", groups, model_dir_2)
 
     eval_expander = st.expander(label='Eval', expanded=False)
     with eval_expander:
         st.markdown("## Eval exec")
         with io.StringIO() as buf, redirect_stdout(buf):
-            result, epoch_log = eval(
+            result_1, epoch_log = eval(
                 model_code,
                 groups,
                 hparams,
@@ -319,49 +415,47 @@ def app(
             print_out = buf.getvalue()
         st.write(print_out)
 
-    result_1 = clean_result(result)
-
-    Path(model_dir_2).mkdir(parents=True, exist_ok=True)
 
     cols = {group.id: [t.name for t in group.targets] for group in groups}
+    group_numbers = sorted(list(cols.keys()))
+
+    file_name = "result.xlsx"
+    sheet_name = "eval"
+
+    for group, targets in cols.items():
+        df = recap_loss(result_1, targets, group)
+        model_dir_3 = f"{model_dir_2}/{group}/"
+        Path(model_dir_3).mkdir(parents=True, exist_ok=True)
+        df.to_excel(f"{model_dir_3}{file_name}", index=False, sheet_name=sheet_name)
+
+    show_group_excel(
+        title="RMSSE Loss",
+        group=group_numbers,
+        model_dir_2=model_dir_2,
+        file_name=file_name,
+        sheet_name=sheet_name,
+        expanded=show_loss
+    )
+
     clusters = {group.id: {t.name: t.cluster.id for t in group.targets} for group in groups}
 
-    loss_expander = st.expander(label='RMSSE Loss', expanded=show_loss)
-    with loss_expander:
-        st.markdown("## RMSSE Loss")
-        for group, targets in cols.items():
-            title_col, download_col = st.columns(2)
-            title_col.markdown(f"### Group {group}")
-            df = recap_loss(result_1, targets, group)
-            model_dir_3 = f"{model_dir_2}/{group}/"
-            Path(model_dir_3).mkdir(parents=True, exist_ok=True)
-            file_name = f"result.xlsx"
-            sheet_name = "eval"
-            df.to_excel(f"{model_dir_3}{file_name}", index=False, sheet_name=sheet_name)
-            download_col.download_button(
-                "Download",
-                get_excel(df, sheet_name=sheet_name),
-                file_name
-            )
-            st.write(df)
+    sheet_name = "epoch"
+    file_name = "epoch.xlsx"
 
-    epoch_expander = st.expander(label='Epoch log', expanded=show_epoch)
-    with epoch_expander:
-        st.markdown("## Epoch log")
-        for group, targets in cols.items():
-            title_col, download_col = st.columns(2)
-            title_col.markdown(f"### Group {group}")
-            df = recap_epoch(epoch_log, targets, clusters, group)
-            model_dir_3 = f"{model_dir_2}/{group}/"
-            Path(model_dir_3).mkdir(parents=True, exist_ok=True)
-            sheet_name = "epoch"
-            df.to_excel(f"{model_dir_3}epoch.xlsx", index=False, sheet_name=sheet_name)
-            download_col.download_button(
-                "Download",
-                get_excel(df, sheet_name=sheet_name),
-                file_name
-            )
-            st.write(df)
+    for group, targets in cols.items():
+        df = recap_epoch(epoch_log, targets, clusters, group)
+        model_dir_3 = f"{model_dir_2}/{group}/"
+        Path(model_dir_3).mkdir(parents=True, exist_ok=True)
+        df.to_excel(f"{model_dir_3}{file_name}", index=False, sheet_name=sheet_name)
+
+    show_group_excel(
+        title="Epoch Log",
+        group=group_numbers,
+        model_dir_2=model_dir_2,
+        file_name=file_name,
+        sheet_name=sheet_name,
+        expanded=show_loss
+    )
 
     log_dir_2 = f"{log_dir}/T{trial_id}/"
     tb_expander = st.expander(label='Tensorboard', expanded=show_tb)

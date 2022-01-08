@@ -20,9 +20,11 @@ from covid_forecasting_joint_learning.pipeline.clustering import Cluster
 
 @st.cache(
     hash_funcs={
-        KabkoData: hash,
-        Cluster: hash,
-        Group: hash
+        KabkoData: id,
+        Cluster: id,
+        Group: id,
+        type(KabkoData): id,
+        type(load_data): id
     },
     allow_output_mutation=True
 )
@@ -59,9 +61,11 @@ def print_clustering_result(groups):
 
 @st.cache(
     hash_funcs={
-        KabkoData: hash,
-        Cluster: hash,
-        Group: hash
+        KabkoData: id,
+        Cluster: id,
+        Group: id,
+        type(KabkoData): id,
+        type(load_data): id
     },
     allow_output_mutation=True
 )
@@ -74,9 +78,11 @@ def cluster(groups):
 
 @st.cache(
     hash_funcs={
-        KabkoData: hash,
-        Cluster: hash,
-        Group: hash
+        KabkoData: id,
+        Cluster: id,
+        Group: id,
+        type(KabkoData): id,
+        type(load_data): id
     },
     allow_output_mutation=True
 )
@@ -94,9 +100,11 @@ def preprocess_2(groups, x_cols, future_exo_cols):
 
 @st.cache(
     hash_funcs={
-        KabkoData: hash,
-        Cluster: hash,
-        Group: hash
+        KabkoData: id,
+        Cluster: id,
+        Group: id,
+        type(KabkoData): id,
+        type(load_data): id
     },
     allow_output_mutation=True
 )
@@ -131,6 +139,10 @@ def app():
             kabko_names,
             kabko_names
         )
+
+    if len(kabko_names) == 0:
+        st.error(f"Please select at least one kabupaten/kota")
+        return
 
     kabko_col, last_col = st.sidebar.columns(2)
     kabko_name = kabko_col.selectbox("Kabupaten/kota", kabko_names)

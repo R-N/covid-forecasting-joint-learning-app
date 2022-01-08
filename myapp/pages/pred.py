@@ -37,9 +37,11 @@ def _app():
 
 @st.cache(
     hash_funcs={
-        KabkoData: hash,
-        Cluster: hash,
-        Group: hash
+        KabkoData: id,
+        Cluster: id,
+        Group: id,
+        type(KabkoData): id,
+        type(load_data): id
     },
     allow_output_mutation=True
 )
@@ -67,9 +69,11 @@ def pred(target, model_dir_3):
 
 @st.cache(
     hash_funcs={
-        KabkoData: hash,
-        Cluster: hash,
-        Group: hash
+        KabkoData: id,
+        Cluster: id,
+        Group: id,
+        type(KabkoData): id,
+        type(load_data): id
     },
     allow_output_mutation=True
 )
@@ -123,16 +127,18 @@ def make_figs(df, model_dir_3):
 
 @st.cache(
     hash_funcs={
-        KabkoData: hash,
-        Cluster: hash,
-        Group: hash
+        KabkoData: id,
+        Cluster: id,
+        Group: id,
+        type(KabkoData): id,
+        type(load_data): id
     },
     allow_output_mutation=True
 )
-def preprocess_pred(targets, pred_date, past_size, past_cols, future_exo_cols):
+def preprocess_pred(targets, end_date, past_size, past_cols, future_exo_cols):
     Pipeline.preprocessing_7(
         targets,
-        end_date=pred_date,
+        end_date=end_date,
         past_size=past_size,
         past_cols=past_cols,
         future_exo_cols=future_exo_cols

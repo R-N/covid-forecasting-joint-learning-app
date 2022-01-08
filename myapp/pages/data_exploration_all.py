@@ -91,6 +91,10 @@ def app():
             kabko_names
         )
 
+    if len(kabko_names) == 0:
+        st.error(f"Please select at least one kabupaten/kota")
+        return
+
     date_expander = st.sidebar.expander(label='Dates', expanded=False)
     with date_expander:
         single_dates = st.multiselect(
@@ -118,6 +122,10 @@ def app():
             y_cols
         )
 
+    if len(y_cols) == 0:
+        st.error(f"Please select at least one y_col")
+        return
+
     cols_non_date, cols = get_cols(single_dates, labeled_dates, cols_non_date, y_cols)
 
     first = first_col.date_input("First date", pd.to_datetime("2020-03-20"))
@@ -139,7 +147,7 @@ def app():
     lag_start = lag_start_col.number_input("Lag Start", value=0, step=1)
     lag_end = lag_end_col.number_input("Lag End", value=-14, step=1)
 
-    if st.checkbox("Correlation Matrix for cols_non_date", False):
+    if len(cols_non_date) > 0 and st.checkbox("Correlation Matrix for cols_non_date", False):
         corr = corr_lag_best_multi_dfs(
             dfs,
             x_cols=cols_non_date,
@@ -156,7 +164,7 @@ def app():
         st.markdown("Fair vars: " + ", ".join(fair_vars))
 
 
-    if st.checkbox("Correlation Matrix for dates", False):
+    if len(single_dates) > 0 and st.checkbox("Correlation Matrix for dates", False):
         corr_dates = corr_lag_best_multi_dfs(
             dfs,
             x_cols=single_dates,
@@ -172,10 +180,11 @@ def app():
         fair_dates = sorted(list({k for k, v in corr_dates.T.items() if max(np.abs(v)) >= min_corr}))
         st.markdown("Fair dates: " + ", ".join(fair_dates))
 
-    if st.checkbox("Correlation Matrix for all, without days", False):
+    x_cols = [d for d in DataCol.COLS_NON_DATE if d in cols_non_date] + single_dates
+    if len(x_cols) > 0 and st.checkbox("Correlation Matrix for all, without days", False):
         corr_all = corr_lag_best_multi_dfs(
             dfs,
-            x_cols=[d for d in DataCol.COLS_NON_DATE if d in cols_non_date] + single_dates,
+            x_cols=x_cols,
             y_cols=y_cols,
             lag_start=lag_start,
             lag_end=lag_end,
