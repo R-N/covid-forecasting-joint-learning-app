@@ -1,3 +1,3 @@
-git+git://github.com/R-N/covid-forecasting-joint-learning.git#egg=covid-forecasting-joint-learning
+git+https://github.com/R-N/covid-forecasting-joint-learning.git#egg=covid-forecasting-joint-learning
 streamlit
 streamlit-tensorboard
