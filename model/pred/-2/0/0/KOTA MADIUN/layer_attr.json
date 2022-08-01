@@ -1,0 +1,10 @@
+{
+    "future_model.private_head": 0.01398091297596693,
+    "future_model.shared_head": -0.002451137639582157,
+    "past_model": -0.04704570537433028,
+    "past_model.pre_shared_representation": 0.0006956310680834576,
+    "past_model.private_head": -0.04474136233329773,
+    "past_model.private_representation": -0.009055251808604226,
+    "past_model.shared_head": -0.0023043430410325527,
+    "past_model.shared_representation": -0.005355007975595072
+}

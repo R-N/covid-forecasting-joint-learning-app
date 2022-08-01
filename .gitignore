@@ -115,7 +115,7 @@ dmypy.json
 
 logs/eval/
 logs/pred/
-model/eval/
-model/pred/
-model/pred_load/
+# model/eval/
+# model/pred/
+# model/pred_load/
 temp/
