@@ -1,3 +1,4 @@
 git+https://github.com/R-N/covid-forecasting-joint-learning.git#egg=covid-forecasting-joint-learning
 streamlit==1.11.1
 streamlit-tensorboard
+altair<v4
